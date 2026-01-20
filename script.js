@@ -1,33 +1,56 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreElement = document.getElementById('score');
+const scoreEl = document.getElementById('score');
 
-canvas.width = 400;
-canvas.height = 600;
+canvas.width = window.innerWidth > 400 ? 400 : window.innerWidth;
+canvas.height = window.innerHeight;
 
 let score = 0;
 let gameActive = true;
+let speed = 8;
 
-const player = {
-    x: canvas.width / 2 - 25,
-    y: canvas.height - 70,
-    width: 50,
-    height: 50,
-    speed: 7,
-    color: '#1a1a1a' // Batman Black
+// Lane Configuration
+const lanes = [canvas.width / 6, canvas.width / 2, (canvas.width / 6) * 5];
+let currentLane = 1; // Start in the middle lane
+
+const obstacles = [];
+
+// Hero Object
+const hero = {
+    x: lanes[currentLane],
+    y: canvas.height - 120,
+    size: 40
 };
 
-const items = [];
-const itemFrequency = 0.02;
+// Controls
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') moveHero(-1);
+    if (e.key === 'ArrowRight' || e.key === 'd') moveHero(1);
+});
 
-function createItem() {
-    if (Math.random() < itemFrequency) {
-        items.push({
-            x: Math.random() * (canvas.width - 20),
-            y: -20,
-            size: 20,
-            speed: 3 + Math.random() * 2,
-            color: '#ffcc00' // Golden dog food
+// Mobile Swipe/Tap Logic
+let touchStartX = 0;
+window.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+window.addEventListener('touchend', e => {
+    let touchEndX = e.changedTouches[0].clientX;
+    if (touchStartX - touchEndX > 50) moveHero(-1);
+    if (touchEndX - touchStartX > 50) moveHero(1);
+});
+
+function moveHero(dir) {
+    currentLane += dir;
+    if (currentLane < 0) currentLane = 0;
+    if (currentLane > 2) currentLane = 2;
+}
+
+function spawnObstacle() {
+    if (Math.random() < 0.03) {
+        const laneIdx = Math.floor(Math.random() * 3);
+        obstacles.push({
+            x: lanes[laneIdx],
+            y: -50,
+            w: 50,
+            h: 30
         });
     }
 }
@@ -35,43 +58,59 @@ function createItem() {
 function update() {
     if (!gameActive) return;
 
-    // Move Player
-    if (keys['ArrowLeft'] || keys['a']) player.x -= player.speed;
-    if (keys['ArrowRight'] || keys['d']) player.x += player.speed;
+    score++;
+    scoreEl.innerText = Math.floor(score / 10);
+    speed += 0.001; // Gradually gets faster
 
-    // Boundary Check
-    if (player.x < 0) player.x = 0;
-    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+    // Interpolate hero movement for smoothness
+    const targetX = lanes[currentLane];
+    hero.x += (targetX - hero.x) * 0.2;
 
-    // Move Items
-    for (let i = items.length - 1; i >= 0; i--) {
-        items[i].y += items[i].speed;
+    obstacles.forEach((obs, i) => {
+        obs.y += speed;
 
-        // Collision Detection
-        if (
-            items[i].x < player.x + player.width &&
-            items[i].x + items[i].size > player.x &&
-            items[i].y < player.y + player.height &&
-            items[i].y + items[i].size > player.y
-        ) {
-            items.splice(i, 1);
-            score++;
-            scoreElement.innerText = score;
-        } else if (items[i].y > canvas.height) {
-            items.splice(i, 1);
+        // Collision Check
+        if (Math.abs(hero.x - obs.x) < 30 && Math.abs(hero.y - obs.y) < 30) {
+            gameActive = false;
+            alert("The Guardian has fallen! Final Distance: " + Math.floor(score/10) + "m");
+            location.reload();
         }
-    }
-    createItem();
+
+        if (obs.y > canvas.height) obstacles.splice(i, 1);
+    });
+
+    spawnObstacle();
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Draw Road
+    ctx.fillStyle = "#333";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw Lane Markers
+    ctx.strokeStyle = "#555";
+    ctx.setLineDash([20, 20]);
+    ctx.beginPath();
+    ctx.moveTo(canvas.width / 3, 0); ctx.lineTo(canvas.width / 3, canvas.height);
+    ctx.moveTo((canvas.width / 3) * 2, 0); ctx.lineTo((canvas.width / 3) * 2, canvas.height);
+    ctx.stroke();
 
-    // Draw Hero (Simple Batman Shape)
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.fillStyle = "#ffcc00"; // Bat-logo color
-    ctx.fillRect(player.x + 15, player.y + 15, 20, 10);
+    // Draw Hero (Batman Icon)
+    ctx.fillStyle = "black";
+    ctx.beginPath();
+    ctx.arc(hero.x, hero.y, hero.size/2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffcc00";
+    ctx.fillRect(hero.x - 10, hero.y - 5, 20, 10); // Belt
 
-    // Draw Items
-  ;
+    // Draw Obstacles
+    ctx.fillStyle = "#ff4444";
+    obstacles.forEach(obs => {
+        ctx.fillRect(obs.x - 25, obs.y - 15, 50, 30);
+    });
+
+    update();
+    requestAnimationFrame(draw);
+}
+
+draw();
