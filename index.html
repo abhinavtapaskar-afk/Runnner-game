@@ -2,14 +2,16 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Guardian of Nanded</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nanded Run: Guardian Edition</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="gameCanvas"></canvas>
-        <div id="score">Dogs Fed: 0</div>
+    <div id="ui">
+        <div id="scoreBoard">Distance: <span id="score">0</span>m</div>
     </div>
+    <canvas id="gameCanvas"></canvas>
+    <div id="instructions">Swipe or Use A / D to Switch Lanes</div>
     <script src="script.js"></script>
 </body>
 </html>
