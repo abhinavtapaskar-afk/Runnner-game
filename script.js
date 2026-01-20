@@ -74,21 +74,4 @@ function draw() {
     ctx.fillRect(player.x + 15, player.y + 15, 20, 10);
 
     // Draw Items
-    items.forEach(item => {
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.arc(item.x, item.y, item.size/2, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
-    requestAnimationFrame(() => {
-        update();
-        draw();
-    });
-}
-
-const keys = {};
-window.addEventListener('keydown', e => keys[e.key] = true);
-window.addEventListener('keyup', e => keys[e.key] = false);
-
-draw();
+  ;
